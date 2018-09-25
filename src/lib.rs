@@ -12,8 +12,8 @@ extern {
     fn log(s: &str);
 }
 
-const SCREEN_ROWS: usize = 32;
-const SCREEN_COLS: usize = 64;
+const SCREEN_HEIGHT: usize = 32;
+const SCREEN_WIDTH: usize = 64;
 const FONTSET: [u8; 80] = [
   0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
   0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -39,8 +39,7 @@ pub struct Cpu {
     registers: [u8; 16],
     index: u16,
     pc: u16,
-    // TODO: optimize with bit manipulation
-    screen: [u8; SCREEN_ROWS * SCREEN_COLS],
+    screen: [u8; SCREEN_HEIGHT * SCREEN_WIDTH / 8],
     delay_timer: u8,
     sound_timer: u8,
     stack: [u16; 16],
@@ -65,7 +64,7 @@ impl Cpu {
             registers: [0; 16],
             index: 0,
             pc: 0,
-            screen: [0; SCREEN_ROWS * SCREEN_COLS],
+            screen: [0; SCREEN_HEIGHT * SCREEN_WIDTH / 8],
             delay_timer: 0,
             sound_timer: 0,
             stack: [0; 16],
@@ -175,12 +174,8 @@ impl Cpu {
                     self.pc += 2;
                 }
             },
-            (0x6, _, _, _) => {
-                self.registers[x] = kk;
-            },
-            (0x7, _, _, _) => {
-                self.registers[x] += kk;
-            },
+            (0x6, _, _, _) => self.registers[x] = kk,
+            (0x7, _, _, _) => self.registers[x] += kk,
             (0x8, _, _, 0x0) => self.registers[x] = self.registers[y],
             (0x8, _, _, 0x1) => self.registers[x] |= self.registers[y],
             (0x8, _, _, 0x2) => self.registers[x] &= self.registers[y],
@@ -238,11 +233,13 @@ impl Cpu {
                     let bitcode = self.memory[self.index as usize + row];
                     for col in 0..8 {
                         if bitcode & (0x80 >> col) != 0 {
-                            let screen_index = (self.registers[y] as usize + row) * SCREEN_COLS + self.registers[x] as usize + col;
-                            if self.screen[screen_index] != 0 {
+                            let screen_index = (self.registers[y] as usize + row) * SCREEN_WIDTH + self.registers[x] as usize + col;
+                            let byte_index = screen_index / 8;
+                            let bit_index = screen_index % 8;
+                            if self.screen[byte_index] & (1 << bit_index) != 0 {
                                 self.registers[15] = 1;
                             }
-                            self.screen[screen_index] ^= 1;
+                            self.screen[byte_index] ^= 1 << bit_index;
                         }
                     }
                 }
@@ -295,18 +292,34 @@ impl Cpu {
     pub fn screen(&self) -> *const u8 {
         self.screen.as_ptr()
     }
+
+    pub fn screen_width(&self) -> usize {
+        SCREEN_WIDTH
+    }
+
+    pub fn screen_height(&self) -> usize {
+        SCREEN_HEIGHT
+    }
+
+    pub fn press_key(&mut self, index: usize) {
+        self.keys[index] = true;
+    }
+
+    pub fn release_key(&mut self, index: usize) {
+        self.keys[index] = false;
+    }
 }
 
 mod tests {
     use std::fs::File;
     use std::io::Read;
-    use super::{SCREEN_ROWS, SCREEN_COLS, Cpu};
+    use super::{SCREEN_HEIGHT, SCREEN_WIDTH, Cpu};
     use std::thread;
     use std::time::Duration;
 
     #[test]
     fn test() {
-        let mut reader = File::open("../chip-8-web/roms/TEST").unwrap();
+        let mut reader = File::open("../chip-8-web/roms/15PUZZLE").unwrap();
         let mut cpu = Cpu::new();
         cpu.initialize();
         let mut buffer = vec![0; 3000];
@@ -318,12 +331,15 @@ mod tests {
 
             print!("{}[2J", 27 as char);
             println!("FRAME {}", i);
-            for row in 0..SCREEN_ROWS {
-                for col in 0..SCREEN_COLS {
-                    if cpu.screen[row * SCREEN_COLS + col] == 0 {
-                        print!(" ");
-                    } else {
+            for row in 0..SCREEN_HEIGHT {
+                for col in 0..SCREEN_WIDTH {
+                    let index = (row * SCREEN_WIDTH + col);
+                    let byte_index = index / 8;
+                    let bit_index = index % 8;
+                    if cpu.screen[byte_index] & (1 << bit_index) != 0  {
                         print!("█");
+                    } else {
+                        print!(" ");
                     }
                 }
                 println!("");
