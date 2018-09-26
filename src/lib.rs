@@ -6,12 +6,6 @@ mod utils;
 
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
-extern {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
 const SCREEN_HEIGHT: usize = 32;
 const SCREEN_WIDTH: usize = 64;
 const FONTSET: [u8; 80] = [
@@ -34,7 +28,7 @@ const FONTSET: [u8; 80] = [
 ];
 
 #[wasm_bindgen]
-pub struct Cpu {
+pub struct Chip8 {
     memory: [u8; 4096],
     registers: [u8; 16],
     index: u16,
@@ -46,10 +40,12 @@ pub struct Cpu {
     sp: u16,
     keys: [bool; 16],
     should_draw: bool,
+    should_beep: bool,
 }
 
+// TODO: Break up chip8 into pieces
 #[wasm_bindgen]
-impl Cpu {
+impl Chip8 {
     fn clear_screen(&mut self) {
         for pixel in self.screen.iter_mut() {
             *pixel = 0;
@@ -59,7 +55,7 @@ impl Cpu {
 
     pub fn new() -> Self {
         utils::set_panic_hook();
-        return Cpu {
+        return Chip8 {
             memory: [0; 4096],
             registers: [0; 16],
             index: 0,
@@ -71,10 +67,11 @@ impl Cpu {
             sp: 0,
             keys: [false; 16],
             should_draw: false,
+            should_beep: false,
         }
     }
 
-    pub fn initialize(&mut self) {
+    fn initialize(&mut self) {
         for i in self.memory.iter_mut() {
             *i = 0;
         }
@@ -102,12 +99,11 @@ impl Cpu {
         for i in self.keys.iter_mut() {
             *i = false;
         }
-
-        self.should_draw = false;
     }
 
     // TODO: Add file input using web-sys when crate gets published
     pub fn load_rom(&mut self, rom: &[u8]) {
+        self.initialize();
         for (i, byte) in rom.iter().enumerate() {
             self.memory[i + 0x200] = *byte;
         }
@@ -122,18 +118,25 @@ impl Cpu {
         self.pc += 2;
 
         self.process_opcode(opcode);
+    }
 
+    pub fn decrement_timers(&mut self) {
         if self.delay_timer > 0 {
             self.delay_timer -= 1;
         }
 
         if self.sound_timer > 0 {
             self.sound_timer -= 1;
-            log("BEEP!");
+            if self.sound_timer == 0 {
+                self.should_beep = true;
+            }
         }
     }
 
     pub fn process_opcode(&mut self, opcode: u16) {
+        self.should_beep = false;
+        self.should_draw = false;
+
         let tokens = (
             (opcode & 0xF000) >> 12,
             (opcode & 0x0F00) >> 8,
@@ -175,7 +178,7 @@ impl Cpu {
                 }
             },
             (0x6, _, _, _) => self.registers[x] = kk,
-            (0x7, _, _, _) => self.registers[x] += kk,
+            (0x7, _, _, _) => self.registers[x] = self.registers[x].wrapping_add(kk),
             (0x8, _, _, 0x0) => self.registers[x] = self.registers[y],
             (0x8, _, _, 0x1) => self.registers[x] |= self.registers[y],
             (0x8, _, _, 0x2) => self.registers[x] &= self.registers[y],
@@ -308,26 +311,33 @@ impl Cpu {
     pub fn release_key(&mut self, index: usize) {
         self.keys[index] = false;
     }
+
+    pub fn should_draw(&self) -> bool {
+        self.should_draw
+    }
+
+    pub fn should_beep(&self) -> bool {
+        self.should_beep
+    }
 }
 
 mod tests {
     use std::fs::File;
     use std::io::Read;
-    use super::{SCREEN_HEIGHT, SCREEN_WIDTH, Cpu};
+    use super::{SCREEN_HEIGHT, SCREEN_WIDTH, Chip8};
     use std::thread;
     use std::time::Duration;
 
     #[test]
     fn test() {
-        let mut reader = File::open("../chip-8-web/roms/15PUZZLE").unwrap();
-        let mut cpu = Cpu::new();
-        cpu.initialize();
+        let mut reader = File::open("../chip-8-web/roms/TETRIS").unwrap();
+        let mut chip8 = Chip8::new();
         let mut buffer = vec![0; 3000];
         reader.read(&mut buffer).unwrap();
-        cpu.load_rom(&buffer);
+        chip8.load_rom(&buffer);
 
         for i in 0..100000 {
-            cpu.execute_cycle();
+            chip8.execute_cycle();
 
             print!("{}[2J", 27 as char);
             println!("FRAME {}", i);
@@ -336,7 +346,7 @@ mod tests {
                     let index = (row * SCREEN_WIDTH + col);
                     let byte_index = index / 8;
                     let bit_index = index % 8;
-                    if cpu.screen[byte_index] & (1 << bit_index) != 0  {
+                    if chip8.screen[byte_index] & (1 << bit_index) != 0  {
                         print!("█");
                     } else {
                         print!(" ");
@@ -344,17 +354,18 @@ mod tests {
                 }
                 println!("");
             }
-            println!("PC: {} | I: {}", cpu.pc, cpu.index);
-            for (index, reg) in cpu.registers.iter().enumerate() {
+            println!("PC: {} | I: {}", chip8.pc, chip8.index);
+            for (index, reg) in chip8.registers.iter().enumerate() {
                 println!("V{}: {}", index, reg);
             }
             println!("");
-            if i > 200 {
+            if i > 400 {
                 use std::io::{stdin,stdout,Write};
                 let mut s=String::new();
                 stdin().read_line(&mut s).expect("Did not enter a correct string");
             }
-            cpu.should_draw = false;
+            thread::sleep(Duration::from_millis(10));
+            chip8.should_draw = false;
         }
     }
 }
