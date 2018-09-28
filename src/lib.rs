@@ -222,6 +222,7 @@ impl Chip8 {
         self.index = 0;
         self.pc = PROGRAM_START;
         self.screen.clear_screen();
+        self.screen.set_mode(Mode::Standard);
         self.should_draw = true;
         self.delay_timer = 0;
         self.sound_timer = 0;
@@ -406,8 +407,8 @@ impl Chip8 {
                         let col_index = cols / 8;
                         let bitcode = self.memory[self.index as usize + row * col_index + col / 8];
                         if bitcode & (0x80 >> (col % 8)) != 0 {
-                            let row = self.registers[y] as usize + row;
-                            let col = self.registers[x] as usize + col;
+                            let row = (self.registers[y] as usize + row) % self.screen.height();
+                            let col = (self.registers[x] as usize + col) % self.screen.width();
                             if self.screen.get_pixel(row, col) {
                                 self.registers[15] = 1;
                             }
@@ -522,7 +523,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let mut reader = File::open("../chip-8-web/roms/ANT").unwrap();
+        let mut reader = File::open("../chip-8-web/roms/VERS").unwrap();
         let mut chip8 = Chip8::new();
         let mut buffer = vec![0; 3000];
         reader.read(&mut buffer).unwrap();
