@@ -197,7 +197,7 @@ impl Chip8 {
             should_draw: false,
             should_beep: false,
             is_running: true,
-        }
+        };
     }
 
     fn initialize(&mut self) {
@@ -211,7 +211,10 @@ impl Chip8 {
         }
 
         let super_fontset_range = FONTSET.len()..FONTSET.len() + SUPER_FONTSET.len();
-        for (d, s) in self.memory[super_fontset_range].iter_mut().zip(SUPER_FONTSET.iter()) {
+        for (d, s) in self.memory[super_fontset_range]
+            .iter_mut()
+            .zip(SUPER_FONTSET.iter())
+        {
             *d = *s;
         }
 
@@ -418,7 +421,7 @@ impl Chip8 {
                 }
 
                 self.should_draw = true;
-            }
+            },
             (0xE, _, 0x9, 0xE) => {
                 if self.keys[self.registers[x] as usize] {
                     self.pc += 2;
@@ -515,9 +518,9 @@ impl Chip8 {
 }
 
 mod tests {
+    use super::Chip8;
     use std::fs::File;
     use std::io::Read;
-    use super::Chip8;
     use std::thread;
     use std::time::Duration;
 
@@ -548,12 +551,18 @@ mod tests {
             for (index, reg) in chip8.registers.iter().enumerate() {
                 println!("V{}: {}", index, reg);
             }
-            println!("WIDTH: {}, HEIGHT: {}", chip8.screen_width(), chip8.screen_height());
+            println!(
+                "WIDTH: {}, HEIGHT: {}",
+                chip8.screen_width(),
+                chip8.screen_height()
+            );
             println!("");
             if i > 5000 {
-                use std::io::{stdin,stdout,Write};
-                let mut s=String::new();
-                stdin().read_line(&mut s).expect("Did not enter a correct string");
+                use std::io::{stdin, stdout, Write};
+                let mut s = String::new();
+                stdin()
+                    .read_line(&mut s)
+                    .expect("Did not enter a correct string");
             }
             chip8.decrement_timers();
             thread::sleep(Duration::from_millis(10));
