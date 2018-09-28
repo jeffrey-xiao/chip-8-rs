@@ -1,5 +1,6 @@
 # chip-8-rs
 
+[![NPM version](https://img.shields.io/npm/v/chip-8-wasm.svg?style=flat)](https://www.npmjs.com/package/chip-8-wasm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Build Status](https://travis-ci.org/jeffrey-xiao/chip-8-rs.svg?branch=master)](https://travis-ci.org/jeffrey-xiao/chip-8-rs)
