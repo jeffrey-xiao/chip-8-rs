@@ -2,18 +2,17 @@ extern crate cfg_if;
 extern crate js_sys;
 extern crate wasm_bindgen;
 
+mod screen;
+mod keypad;
 mod utils;
 
+use screen::{Screen, ScreenMode};
+use keypad::Keypad;
 use wasm_bindgen::prelude::*;
 
-const STANDARD_SCREEN_HEIGHT: usize = 32;
-const STANDARD_SCREEN_WIDTH: usize = 64;
-const SUPER_SCREEN_HEIGHT: usize = STANDARD_SCREEN_HEIGHT * 2;
-const SUPER_SCREEN_WIDTH: usize = STANDARD_SCREEN_WIDTH * 2;
 const MEMORY_SIZE: usize = 4096;
 const STACK_SIZE: usize = 16;
 const REGISTER_COUNT: usize = 16;
-const KEY_COUNT: usize = 16;
 const PROGRAM_START: u16 = 0x200;
 const SUPER_MODE_RPL_FLAG_COUNT: usize = 8;
 
@@ -55,108 +54,11 @@ const SUPER_FONTSET: [u8; 160] = [
     0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0xC0, 0xC0, 0xC0, 0xC0, // F
 ];
 
+
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub enum Mode {
-    Standard,
-    Super,
-}
-
-pub struct Screen {
-    mode: Mode,
-    pixels: [u8; SUPER_SCREEN_HEIGHT * SUPER_SCREEN_WIDTH / 8],
-}
-
-impl Screen {
-    pub fn new() -> Self {
-        Screen {
-            mode: Mode::Standard,
-            pixels: [0; SUPER_SCREEN_HEIGHT * SUPER_SCREEN_WIDTH / 8],
-        }
-    }
-
-    pub fn get_pixel(&self, row: usize, col: usize) -> bool {
-        let index = row * self.width() + col;
-        let byte_index = index / 8;
-        let bit_index = index % 8;
-        self.pixels[byte_index] & (1 << bit_index) != 0
-    }
-
-    pub fn flip_pixel(&mut self, row: usize, col: usize) {
-        let index = row * self.width() + col;
-        let byte_index = index / 8;
-        let bit_index = index % 8;
-        self.pixels[byte_index] ^= 1 << bit_index;
-    }
-
-    pub fn scroll_down(&mut self, rows: usize) {
-        let row_bytes = self.width() / 8;
-        for row in (0..self.height()).rev() {
-            for col in 0..row_bytes {
-                let index = row * row_bytes + col;
-                if index >= row_bytes * rows {
-                    self.pixels[index] = self.pixels[index - row_bytes * rows];
-                } else {
-                    self.pixels[index] = 0;
-                }
-            }
-        }
-    }
-
-    pub fn scroll_right(&mut self) {
-        println!("SCROLL RIGHT");
-        let row_bytes = self.width() / 8;
-        for row in 0..self.height() {
-            for col in (1..row_bytes).rev() {
-                self.pixels[row * row_bytes + col] <<= 4;
-                self.pixels[row * row_bytes + col] |= self.pixels[row * row_bytes + col - 1] >> 4;
-            }
-            self.pixels[row * row_bytes] <<= 4;
-        }
-    }
-
-    pub fn scroll_left(&mut self) {
-        println!("SCROLL LEFT");
-        let row_bytes = self.width() / 8;
-        for row in 0..self.height() {
-            for col in 0..row_bytes - 1 {
-                self.pixels[row * row_bytes + col] >>= 4;
-                self.pixels[row * row_bytes + col] |= self.pixels[row * row_bytes + col + 1] << 4;
-            }
-            self.pixels[(row + 1) * row_bytes - 1] >>= 4;
-        }
-    }
-
-    pub fn clear_screen(&mut self) {
-        for pixel in self.pixels.iter_mut() {
-            *pixel = 0;
-        }
-    }
-
-    pub fn pixels(&self) -> *const u8 {
-        self.pixels.as_ptr()
-    }
-
-    pub fn width(&self) -> usize {
-        match self.mode {
-            Mode::Standard => STANDARD_SCREEN_WIDTH,
-            Mode::Super => SUPER_SCREEN_WIDTH,
-        }
-    }
-
-    pub fn height(&self) -> usize {
-        match self.mode {
-            Mode::Standard => STANDARD_SCREEN_HEIGHT,
-            Mode::Super => SUPER_SCREEN_HEIGHT,
-        }
-    }
-
-    pub fn get_mode(&mut self) -> Mode {
-        self.mode
-    }
-
-    pub fn set_mode(&mut self, mode: Mode) {
-        self.mode = mode;
-    }
+pub enum DrawMode {
+    Clip,
+    Wrap,
 }
 
 #[wasm_bindgen]
@@ -170,11 +72,12 @@ pub struct Chip8 {
     sound_timer: u8,
     stack: [u16; STACK_SIZE],
     sp: u16,
-    keys: [bool; KEY_COUNT],
+    keypad: Keypad,
     super_mode_rpl_flags: [u8; SUPER_MODE_RPL_FLAG_COUNT],
     should_draw: bool,
     should_beep: bool,
     is_running: bool,
+    draw_mode: DrawMode,
 }
 
 // TODO: Break up chip8 into pieces
@@ -192,11 +95,12 @@ impl Chip8 {
             sound_timer: 0,
             stack: [0; STACK_SIZE],
             sp: 0,
-            keys: [false; KEY_COUNT],
+            keypad: Keypad::new(),
             super_mode_rpl_flags: [0; SUPER_MODE_RPL_FLAG_COUNT],
             should_draw: false,
             should_beep: false,
             is_running: true,
+            draw_mode: DrawMode::Wrap,
         };
     }
 
@@ -225,7 +129,7 @@ impl Chip8 {
         self.index = 0;
         self.pc = PROGRAM_START;
         self.screen.clear_screen();
-        self.screen.set_mode(Mode::Standard);
+        self.screen.set_mode(ScreenMode::Standard);
         self.should_draw = true;
         self.delay_timer = 0;
         self.sound_timer = 0;
@@ -236,9 +140,7 @@ impl Chip8 {
 
         self.sp = 0;
 
-        for i in self.keys.iter_mut() {
-            *i = false;
-        }
+        self.keypad.clear();
 
         for i in self.super_mode_rpl_flags.iter_mut() {
             *i = 0;
@@ -247,8 +149,16 @@ impl Chip8 {
         self.is_running = true;
     }
 
-    pub fn load_rom(&mut self, rom: &[u8]) {
+    pub fn load_rom(&mut self, rom: &[u8], should_wrap: bool) {
         self.initialize();
+        self.draw_mode = {
+            if should_wrap {
+                DrawMode::Wrap
+            } else {
+                DrawMode::Clip
+            }
+        };
+
         for (i, byte) in rom.iter().enumerate() {
             self.memory[i + PROGRAM_START as usize] = *byte;
         }
@@ -289,7 +199,7 @@ impl Chip8 {
             (opcode & 0xF000) >> 12,
             (opcode & 0x0F00) >> 8,
             (opcode & 0x00F0) >> 4,
-            (opcode & 0x000F),
+            opcode & 0x000F,
         );
 
         let x = tokens.1 as usize;
@@ -320,8 +230,8 @@ impl Chip8 {
                 self.should_draw = true;
             },
             (0x0, 0x0, 0xF, 0xD) => self.is_running = false,
-            (0x0, 0x0, 0xF, 0xE) => self.screen.set_mode(Mode::Standard),
-            (0x0, 0x0, 0xF, 0xF) => self.screen.set_mode(Mode::Super),
+            (0x0, 0x0, 0xF, 0xE) => self.screen.set_mode(ScreenMode::Standard),
+            (0x0, 0x0, 0xF, 0xF) => self.screen.set_mode(ScreenMode::Super),
             (0x1, _, _, _) => self.pc = nnn,
             (0x2, _, _, _) => {
                 self.stack[self.sp as usize] = self.pc;
@@ -400,7 +310,7 @@ impl Chip8 {
                 let mut rows = n;
                 let mut cols = 8;
 
-                if self.screen.get_mode() == Mode::Super && n == 0 {
+                if self.screen.get_mode() == ScreenMode::Super && n == 0 {
                     rows = 16;
                     cols = 16;
                 }
@@ -409,37 +319,49 @@ impl Chip8 {
                     for col in 0..cols {
                         let col_index = cols / 8;
                         let bitcode = self.memory[self.index as usize + row * col_index + col / 8];
-                        if bitcode & (0x80 >> (col % 8)) != 0 {
-                            let row = (self.registers[y] as usize + row) % self.screen.height();
-                            let col = (self.registers[x] as usize + col) % self.screen.width();
-                            if self.screen.get_pixel(row, col) {
-                                self.registers[15] = 1;
-                            }
-                            self.screen.flip_pixel(row, col);
+                        if bitcode & (0x80 >> (col % 8)) == 0 {
+                            continue;
                         }
+
+                        let mut row = self.registers[y] as usize + row;
+                        let mut col = self.registers[x] as usize + col;
+                        match self.draw_mode {
+                            DrawMode::Clip => {
+                                if row > self.screen.height() || col > self.screen.width() {
+                                    continue;
+                                }
+                            },
+                            DrawMode::Wrap => {
+                                row %= self.screen.height();
+                                col %= self.screen.width();
+                            }
+                        }
+
+                        if self.screen.get_pixel(row, col) {
+                            self.registers[15] = 1;
+                        }
+                        self.screen.flip_pixel(row, col);
                     }
                 }
 
                 self.should_draw = true;
             },
             (0xE, _, 0x9, 0xE) => {
-                if self.keys[self.registers[x] as usize] {
+                if self.keypad.is_pressed(self.registers[x] as usize) {
                     self.pc += 2;
                 }
             },
             (0xE, _, 0xA, 0x1) => {
-                if !self.keys[self.registers[x] as usize] {
+                if !self.keypad.is_pressed(self.registers[x] as usize) {
                     self.pc += 2;
                 }
             },
             (0xF, _, 0x0, 0x7) => self.registers[x] = self.delay_timer,
             (0xF, _, 0x0, 0xA) => {
                 self.pc -= 2;
-                for (i, key) in self.keys.iter().enumerate() {
-                    if *key {
-                        self.registers[x] = i as u8;
-                        self.pc += 2;
-                    }
+                if let Some(index) = self.keypad.poll_key() {
+                    self.registers[x] = index as u8;
+                    self.pc += 2;
                 }
             },
             (0xF, _, 0x1, 0x5) => self.delay_timer = self.registers[x],
@@ -489,11 +411,11 @@ impl Chip8 {
     }
 
     pub fn press_key(&mut self, index: usize) {
-        self.keys[index] = true;
+        self.keypad.press_key(index);
     }
 
     pub fn release_key(&mut self, index: usize) {
-        self.keys[index] = false;
+        self.keypad.release_key(index);
     }
 
     pub fn should_draw(&self) -> bool {
@@ -514,58 +436,5 @@ impl Chip8 {
 
     pub fn registers(&self) -> *const u8 {
         self.registers.as_ptr()
-    }
-}
-
-mod tests {
-    use super::Chip8;
-    use std::fs::File;
-    use std::io::Read;
-    use std::thread;
-    use std::time::Duration;
-
-    #[test]
-    fn test() {
-        let mut reader = File::open("../chip-8-web/roms/VERS").unwrap();
-        let mut chip8 = Chip8::new();
-        let mut buffer = vec![0; 3000];
-        reader.read(&mut buffer).unwrap();
-        chip8.load_rom(&buffer);
-
-        for i in 0..100000 {
-            chip8.execute_cycle();
-
-            print!("{}[2J", 27 as char);
-            println!("FRAME {}", i);
-            for row in 0..chip8.screen.height() {
-                for col in 0..chip8.screen.width() {
-                    if chip8.screen.get_pixel(row, col) {
-                        print!("█");
-                    } else {
-                        print!(" ");
-                    }
-                }
-                println!("");
-            }
-            println!("PC: {} | I: {}", chip8.pc, chip8.index);
-            for (index, reg) in chip8.registers.iter().enumerate() {
-                println!("V{}: {}", index, reg);
-            }
-            println!(
-                "WIDTH: {}, HEIGHT: {}",
-                chip8.screen_width(),
-                chip8.screen_height()
-            );
-            println!("");
-            if i > 5000 {
-                use std::io::{stdin, stdout, Write};
-                let mut s = String::new();
-                stdin()
-                    .read_line(&mut s)
-                    .expect("Did not enter a correct string");
-            }
-            chip8.decrement_timers();
-            thread::sleep(Duration::from_millis(10));
-        }
     }
 }
