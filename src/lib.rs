@@ -2,12 +2,12 @@ extern crate cfg_if;
 extern crate js_sys;
 extern crate wasm_bindgen;
 
-mod screen;
 mod keypad;
+mod screen;
 mod utils;
 
-use screen::{Screen, ScreenMode};
 use keypad::Keypad;
+use screen::{Screen, ScreenMode};
 use wasm_bindgen::prelude::*;
 
 const MEMORY_SIZE: usize = 4096;
@@ -53,7 +53,6 @@ const SUPER_FONTSET: [u8; 160] = [
     0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, // E
     0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0xC0, 0xC0, 0xC0, 0xC0, // F
 ];
-
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum DrawMode {
@@ -334,7 +333,7 @@ impl Chip8 {
                             DrawMode::Wrap => {
                                 row %= self.screen.height();
                                 col %= self.screen.width();
-                            }
+                            },
                         }
 
                         if self.screen.get_pixel(row, col) {

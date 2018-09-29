@@ -6,9 +6,7 @@ pub struct Keypad {
 
 impl Keypad {
     pub fn new() -> Self {
-        Keypad {
-            keys: 0,
-        }
+        Keypad { keys: 0 }
     }
 
     pub fn clear(&mut self) {
