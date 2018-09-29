@@ -55,7 +55,7 @@ const SUPER_FONTSET: [u8; 160] = [
 ];
 
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub enum DrawMode {
+enum DrawMode {
     Clip,
     Wrap,
 }
