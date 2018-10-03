@@ -79,7 +79,6 @@ pub struct Chip8 {
     draw_mode: DrawMode,
 }
 
-// TODO: Break up chip8 into pieces
 #[wasm_bindgen]
 impl Chip8 {
     pub fn new() -> Self {
