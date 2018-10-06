@@ -83,7 +83,7 @@ pub struct Chip8 {
 impl Chip8 {
     pub fn new() -> Self {
         utils::set_panic_hook();
-        return Chip8 {
+        Chip8 {
             screen: Screen::new(),
             memory: [0; MEMORY_SIZE],
             registers: [0; REGISTER_COUNT],
@@ -99,7 +99,7 @@ impl Chip8 {
             should_beep: false,
             is_running: true,
             draw_mode: DrawMode::Wrap,
-        };
+        }
     }
 
     fn initialize(&mut self) {
@@ -163,7 +163,7 @@ impl Chip8 {
     }
 
     pub fn fetch_opcode(&self) -> u16 {
-        ((self.memory[self.pc as usize] as u16) << 8) | self.memory[(self.pc + 1) as usize] as u16
+        (u16::from(self.memory[self.pc as usize]) << 8) | u16::from(self.memory[(self.pc + 1) as usize])
     }
 
     pub fn execute_cycle(&mut self) {
@@ -298,20 +298,21 @@ impl Chip8 {
                 }
             },
             (0xA, _, _, _) => self.index = nnn,
-            (0xB, _, _, _) => self.pc = self.registers[0] as u16 + nnn,
+            (0xB, _, _, _) => self.pc = u16::from(self.registers[0]) + nnn,
             (0xC, _, _, _) => {
                 let rand = (js_sys::Math::random() * 256.0).floor() as u8;
                 self.registers[x] = rand & kk;
             },
             (0xD, _, _, _) => {
                 self.registers[15] = 0;
-                let mut rows = n;
-                let mut cols = 8;
 
-                if self.screen.get_mode() == ScreenMode::Super && n == 0 {
-                    rows = 16;
-                    cols = 16;
-                }
+                let (rows, cols) = {
+                    if self.screen.get_mode() == ScreenMode::Super && n == 0 {
+                        (16, 16)
+                    } else {
+                        (n, 8)
+                    }
+                };
 
                 for row in 0..rows {
                     for col in 0..cols {
@@ -364,9 +365,9 @@ impl Chip8 {
             },
             (0xF, _, 0x1, 0x5) => self.delay_timer = self.registers[x],
             (0xF, _, 0x1, 0x8) => self.sound_timer = self.registers[x],
-            (0xF, _, 0x1, 0xE) => self.index += self.registers[x] as u16,
-            (0xF, _, 0x2, 0x9) => self.index = self.registers[x] as u16 * 5,
-            (0xF, _, 0x3, 0x0) => self.index = self.registers[x] as u16 * 10 + 80,
+            (0xF, _, 0x1, 0xE) => self.index += u16::from(self.registers[x]),
+            (0xF, _, 0x2, 0x9) => self.index = u16::from(self.registers[x]) * 5,
+            (0xF, _, 0x3, 0x0) => self.index = u16::from(self.registers[x]) * 10 + 80,
             (0xF, _, 0x3, 0x3) => {
                 self.memory[self.index as usize] = self.registers[x] / 100;
                 self.memory[self.index as usize + 1] = ((self.registers[x]) / 10) % 10;
@@ -382,16 +383,8 @@ impl Chip8 {
                     self.registers[i] = self.memory[self.index as usize + i];
                 }
             },
-            (0xF, _, 0x7, 0x5) => {
-                for i in 0..=x {
-                    self.super_mode_rpl_flags[i] = self.registers[i];
-                }
-            },
-            (0xF, _, 0x8, 0x5) => {
-                for i in 0..=x {
-                    self.registers[i] = self.super_mode_rpl_flags[i];
-                }
-            },
+            (0xF, _, 0x7, 0x5) => self.super_mode_rpl_flags[..=x].clone_from_slice(&self.registers[..=x]),
+            (0xF, _, 0x8, 0x5) => self.registers[..=x].clone_from_slice(&self.super_mode_rpl_flags[..=x]),
             _ => panic!("Unrecognized opcode: {}", opcode),
         }
     }
@@ -434,5 +427,11 @@ impl Chip8 {
 
     pub fn registers(&self) -> *const u8 {
         self.registers.as_ptr()
+    }
+}
+
+impl Default for Chip8 {
+    fn default() -> Self {
+        Self::new()
     }
 }
