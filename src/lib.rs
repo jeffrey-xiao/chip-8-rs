@@ -163,7 +163,8 @@ impl Chip8 {
     }
 
     pub fn fetch_opcode(&self) -> u16 {
-        (u16::from(self.memory[self.pc as usize]) << 8) | u16::from(self.memory[(self.pc + 1) as usize])
+        (u16::from(self.memory[self.pc as usize]) << 8)
+            | u16::from(self.memory[(self.pc + 1) as usize])
     }
 
     pub fn execute_cycle(&mut self) {
@@ -383,8 +384,12 @@ impl Chip8 {
                     self.registers[i] = self.memory[self.index as usize + i];
                 }
             },
-            (0xF, _, 0x7, 0x5) => self.super_mode_rpl_flags[..=x].clone_from_slice(&self.registers[..=x]),
-            (0xF, _, 0x8, 0x5) => self.registers[..=x].clone_from_slice(&self.super_mode_rpl_flags[..=x]),
+            (0xF, _, 0x7, 0x5) => {
+                self.super_mode_rpl_flags[..=x].clone_from_slice(&self.registers[..=x])
+            },
+            (0xF, _, 0x8, 0x5) => {
+                self.registers[..=x].clone_from_slice(&self.super_mode_rpl_flags[..=x])
+            },
             _ => panic!("Unrecognized opcode: {}", opcode),
         }
     }
