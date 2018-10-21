@@ -9,8 +9,8 @@ A chip-8/schip emulator written in Rust that compiles to WebAssembly.
 
 ## References
 
- * [Cowgod's Chip-8 Technical Reference v1.0](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
- * [Erik Bryntse's SUPER-CHIP v1.1](http://devernay.free.fr/hacks/chip8/schip.txt)
+ - [Cowgod's Chip-8 Technical Reference v1.0](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
+ - [Erik Bryntse's SUPER-CHIP v1.1](http://devernay.free.fr/hacks/chip8/schip.txt)
 
 ## License
 
