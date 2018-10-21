@@ -7,6 +7,13 @@
 
 A chip-8/schip emulator written in Rust that compiles to WebAssembly.
 
+## Usage
+
+Install `chip-8-wasm` from [npm](https://www.npmjs.com/):
+```
+$ npm install chip-8-wasm
+```
+
 ## References
 
  - [Cowgod's Chip-8 Technical Reference v1.0](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
