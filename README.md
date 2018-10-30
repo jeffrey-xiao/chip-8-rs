@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Build Status](https://travis-ci.org/jeffrey-xiao/chip-8-rs.svg?branch=master)](https://travis-ci.org/jeffrey-xiao/chip-8-rs)
-[![codecov](https://codecov.io/gh/jeffrey-xiao/extended-collections-rs/branch/master/graph/badge.svg)](https://codecov.io/gh/jeffrey-xiao/extended-collections-rs)
+[![codecov](https://codecov.io/gh/jeffrey-xiao/chip-8-rs/branch/master/graph/badge.svg)](https://codecov.io/gh/jeffrey-xiao/chip-8-rs)
 
 A CHIP-8/SCHIP emulator written in Rust that compiles to WebAssembly.
 
