@@ -26,7 +26,7 @@ Example usage: [`chip-8-web`](https://gitlab.com/jeffrey-xiao/chip-8-web).
 ### [2.0.0] - 2018-10-30
 
  - Changed to use a single `static mut` global and the `no_std` environment to reduce bundle size.
- - Bundle size reduced from ~21 kB in `v1.0.0` to ~3kB.
+ - Bundle size reduced from ~21 kB in `v1.0.0` to ~3kB in `v2.0.0`.
  - Major API change: Instantiating a `Chip8` object is replaced with functions to mutate the global
    `Chip8` object.
 

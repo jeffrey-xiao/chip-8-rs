@@ -2,6 +2,8 @@
 
 #![no_std]
 
+#[macro_use]
+extern crate std;
 extern crate cfg_if;
 extern crate js_sys;
 extern crate wasm_bindgen;
@@ -506,4 +508,32 @@ pub fn index() -> u16 {
 /// Returns a pointer to a byte array that represents the 16 data registers.
 pub fn registers() -> *const u8 {
     unsafe { CHIP_8.registers() }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::hash_map::DefaultHasher;
+    use std::fs;
+    use std::hash::Hasher;
+    use std::slice;
+
+    #[test]
+    fn test_rom() {
+        let buffer = fs::read("tests/TEST_ROM").expect("Expected TEST_ROM to exist.");
+        load_rom(&buffer, true);
+
+        for _ in 0..193 {
+            execute_cycle();
+        }
+
+        let screen = unsafe { slice::from_raw_parts(screen(), screen_height() * screen_width()) };
+
+        let mut hasher = DefaultHasher::new();
+        for val in screen {
+            hasher.write_u8(*val);
+        }
+
+        assert_eq!(hasher.finish(), 0xA309_E966_20E3_20C5);
+    }
 }
