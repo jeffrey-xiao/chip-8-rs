@@ -4,8 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Build Status](https://travis-ci.org/jeffrey-xiao/chip-8-rs.svg?branch=master)](https://travis-ci.org/jeffrey-xiao/chip-8-rs)
+[![codecov](https://codecov.io/gh/jeffrey-xiao/extended-collections-rs/branch/master/graph/badge.svg)](https://codecov.io/gh/jeffrey-xiao/extended-collections-rs)
 
-A chip-8/schip emulator written in Rust that compiles to WebAssembly.
+A CHIP-8/SCHIP emulator written in Rust that compiles to WebAssembly.
 
 ## Documentation
 
@@ -22,13 +23,6 @@ $ npm install chip-8-wasm
 Example usage: [`chip-8-web`](https://gitlab.com/jeffrey-xiao/chip-8-web).
 
 ## Changelog
-
-### [2.0.0] - 2018-10-30
-
- - Changed to use a single `static mut` global and the `no_std` environment to reduce bundle size.
- - Bundle size reduced from ~21 kB in `v1.0.0` to ~3kB in `v2.0.0`.
- - Major API change: Instantiating a `Chip8` object is replaced with functions to mutate the global
-   `Chip8` object.
 
 ### [1.0.0] - 2018-10-06
 
