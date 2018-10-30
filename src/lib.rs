@@ -1,3 +1,7 @@
+//! A chip-8 emulator.
+
+#![no_std]
+
 extern crate cfg_if;
 extern crate js_sys;
 extern crate wasm_bindgen;
@@ -7,7 +11,7 @@ mod screen;
 mod utils;
 
 use keypad::Keypad;
-use screen::{Screen, ScreenMode};
+use screen::{Screen, ScreenMode, SUPER_SCREEN_HEIGHT, SUPER_SCREEN_WIDTH};
 use wasm_bindgen::prelude::*;
 
 const MEMORY_SIZE: usize = 4096;
@@ -60,9 +64,8 @@ enum DrawMode {
     Wrap,
 }
 
-/// A chip-8 emulator.
 #[wasm_bindgen]
-pub struct Chip8 {
+struct Chip8 {
     screen: Screen,
     memory: [u8; MEMORY_SIZE],
     registers: [u8; REGISTER_COUNT],
@@ -80,30 +83,7 @@ pub struct Chip8 {
     draw_mode: DrawMode,
 }
 
-#[wasm_bindgen]
 impl Chip8 {
-    /// Constructs a new `Chip8`.
-    pub fn new() -> Self {
-        utils::set_panic_hook();
-        Chip8 {
-            screen: Screen::new(),
-            memory: [0; MEMORY_SIZE],
-            registers: [0; REGISTER_COUNT],
-            index: 0,
-            pc: 0,
-            delay_timer: 0,
-            sound_timer: 0,
-            stack: [0; STACK_SIZE],
-            sp: 0,
-            keypad: Keypad::new(),
-            super_mode_rpl_flags: [0; SUPER_MODE_RPL_FLAG_COUNT],
-            should_draw: false,
-            should_beep: false,
-            is_running: true,
-            draw_mode: DrawMode::Wrap,
-        }
-    }
-
     fn initialize(&mut self) {
         for i in self.memory.iter_mut() {
             *i = 0;
@@ -149,10 +129,7 @@ impl Chip8 {
         self.is_running = true;
     }
 
-    /// Loads a rom and sets the drawing mode of the emulator. If `should_wrap` is true, then all
-    /// pixels drawn outside of the drawable area will wrap to the other side, else they will be
-    /// ignored.
-    pub fn load_rom(&mut self, rom: &[u8], should_wrap: bool) {
+    fn load_rom(&mut self, rom: &[u8], should_wrap: bool) {
         self.initialize();
         self.draw_mode = {
             if should_wrap {
@@ -172,8 +149,7 @@ impl Chip8 {
             | u16::from(self.memory[(self.pc + 1) as usize])
     }
 
-    /// Runs one fetch-decode-execute cycle.
-    pub fn execute_cycle(&mut self) {
+    fn execute_cycle(&mut self) {
         if !self.is_running {
             return;
         }
@@ -183,8 +159,7 @@ impl Chip8 {
         self.process_opcode(opcode);
     }
 
-    /// Decrement the delay and sound timer by one tick.
-    pub fn decrement_timers(&mut self) {
+    fn decrement_timers(&mut self) {
         if self.delay_timer > 0 {
             self.delay_timer -= 1;
         }
@@ -401,62 +376,134 @@ impl Chip8 {
         }
     }
 
-    /// Returns a pointer to a byte array that represents the screen. The screen will have
-    /// `screen_width * screen_height / 8` bytes in row-major order. Each byte represents 8 bits in
-    /// little-endian. `1` represents that the pixel is black, while `0` represents that the pixel
-    /// is white.
-    pub fn screen(&self) -> *const u8 {
+    fn screen(&self) -> *const u8 {
         self.screen.pixels()
     }
 
-    /// Returns the width of the screen in pixels.
-    pub fn screen_width(&self) -> usize {
+    fn screen_width(&self) -> usize {
         self.screen.width()
     }
 
-    /// Returns the height of the screen in pixels.
-    pub fn screen_height(&self) -> usize {
+    fn screen_height(&self) -> usize {
         self.screen.height()
     }
 
-    /// Sets the state of a key to be pressed. `index` is the index of the key in row-major order.
-    pub fn press_key(&mut self, index: usize) {
+    fn press_key(&mut self, index: usize) {
         self.keypad.press_key(index);
     }
 
-    /// Sets the state of a key to be released. `index` is the index of the key in row-major order.
-    pub fn release_key(&mut self, index: usize) {
+    fn release_key(&mut self, index: usize) {
         self.keypad.release_key(index);
     }
 
-    /// Returns `true` if the screen has been updated and should be redrawn.
-    pub fn should_draw(&self) -> bool {
+    fn should_draw(&self) -> bool {
         self.should_draw
     }
 
-    /// Returns `true` if the a beep should be made.
-    pub fn should_beep(&self) -> bool {
+    fn should_beep(&self) -> bool {
         self.should_beep
     }
 
-    /// Returns the value of the program counter register.
-    pub fn program_counter(&self) -> u16 {
+    fn program_counter(&self) -> u16 {
         self.pc
     }
 
-    /// Returns the value of the index register.
-    pub fn index(&self) -> u16 {
+    fn index(&self) -> u16 {
         self.index
     }
 
-    /// Returns a pointer to a byte array that represents the 16 data registers.
-    pub fn registers(&self) -> *const u8 {
+    fn registers(&self) -> *const u8 {
         self.registers.as_ptr()
     }
 }
 
-impl Default for Chip8 {
-    fn default() -> Self {
-        Self::new()
-    }
+static mut CHIP_8: Chip8 = Chip8 {
+    screen: Screen {
+        mode: ScreenMode::Standard,
+        pixels: [0; SUPER_SCREEN_HEIGHT * SUPER_SCREEN_WIDTH / 8],
+    },
+    memory: [0; MEMORY_SIZE],
+    registers: [0; REGISTER_COUNT],
+    index: 0,
+    pc: 0,
+    delay_timer: 0,
+    sound_timer: 0,
+    stack: [0; STACK_SIZE],
+    sp: 0,
+    keypad: Keypad { keys: 0 },
+    super_mode_rpl_flags: [0; SUPER_MODE_RPL_FLAG_COUNT],
+    should_draw: false,
+    should_beep: false,
+    is_running: true,
+    draw_mode: DrawMode::Wrap,
+};
+
+/// Loads a rom and sets the drawing mode of the emulator. If `should_wrap` is true, then all
+/// pixels drawn outside of the drawable area will wrap to the other side, else they will be
+/// ignored.
+pub fn load_rom(rom: &[u8], should_wrap: bool) {
+    unsafe { CHIP_8.load_rom(rom, should_wrap) }
+}
+
+/// Runs one fetch-decode-execute cycle.
+pub fn execute_cycle() {
+    unsafe { CHIP_8.execute_cycle() }
+}
+
+/// Decrement the delay and sound timer by one tick.
+pub fn decrement_timers() {
+    unsafe { CHIP_8.decrement_timers() }
+}
+
+/// Returns a pointer to a byte array that represents the screen. The screen will have
+/// `screen_width * screen_height / 8` bytes in row-major order. Each byte represents 8 bits in
+/// little-endian. `1` represents that the pixel is black, while `0` represents that the pixel
+/// is white.
+pub fn screen() -> *const u8 {
+    unsafe { CHIP_8.screen() }
+}
+
+/// Returns the width of the screen in pixels.
+pub fn screen_width() -> usize {
+    unsafe { CHIP_8.screen_width() }
+}
+
+/// Returns the height of the screen in pixels.
+pub fn screen_height() -> usize {
+    unsafe { CHIP_8.screen_height() }
+}
+
+/// Sets the state of a key to be pressed. `index` is the index of the key in row-major order.
+pub fn press_key(index: usize) {
+    unsafe { CHIP_8.press_key(index) }
+}
+
+/// Sets the state of a key to be released. `index` is the index of the key in row-major order.
+pub fn release_key(index: usize) {
+    unsafe { CHIP_8.release_key(index) }
+}
+
+/// Returns `true` if the screen has been updated and should be redrawn.
+pub fn should_draw() -> bool {
+    unsafe { CHIP_8.should_draw() }
+}
+
+/// Returns `true` if the a beep should be made.
+pub fn should_beep() -> bool {
+    unsafe { CHIP_8.should_beep() }
+}
+
+/// Returns the value of the program counter register.
+pub fn program_counter() -> u16 {
+    unsafe { CHIP_8.program_counter() }
+}
+
+/// Returns the value of the index register.
+pub fn index() -> u16 {
+    unsafe { CHIP_8.index() }
+}
+
+/// Returns a pointer to a byte array that represents the 16 data registers.
+pub fn registers() -> *const u8 {
+    unsafe { CHIP_8.registers() }
 }

@@ -1,7 +1,7 @@
-const STANDARD_SCREEN_HEIGHT: usize = 32;
-const STANDARD_SCREEN_WIDTH: usize = 64;
-const SUPER_SCREEN_HEIGHT: usize = STANDARD_SCREEN_HEIGHT * 2;
-const SUPER_SCREEN_WIDTH: usize = STANDARD_SCREEN_WIDTH * 2;
+pub const STANDARD_SCREEN_HEIGHT: usize = 32;
+pub const STANDARD_SCREEN_WIDTH: usize = 64;
+pub const SUPER_SCREEN_HEIGHT: usize = STANDARD_SCREEN_HEIGHT * 2;
+pub const SUPER_SCREEN_WIDTH: usize = STANDARD_SCREEN_WIDTH * 2;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum ScreenMode {
@@ -10,18 +10,11 @@ pub enum ScreenMode {
 }
 
 pub struct Screen {
-    mode: ScreenMode,
-    pixels: [u8; SUPER_SCREEN_HEIGHT * SUPER_SCREEN_WIDTH / 8],
+    pub mode: ScreenMode,
+    pub pixels: [u8; SUPER_SCREEN_HEIGHT * SUPER_SCREEN_WIDTH / 8],
 }
 
 impl Screen {
-    pub fn new() -> Self {
-        Screen {
-            mode: ScreenMode::Standard,
-            pixels: [0; SUPER_SCREEN_HEIGHT * SUPER_SCREEN_WIDTH / 8],
-        }
-    }
-
     pub fn get_pixel(&self, row: usize, col: usize) -> bool {
         let index = row * self.width() + col;
         let byte_index = index / 8;

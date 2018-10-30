@@ -1,14 +1,10 @@
 const KEY_COUNT: usize = 16;
 
 pub struct Keypad {
-    keys: u16,
+    pub keys: u16,
 }
 
 impl Keypad {
-    pub fn new() -> Self {
-        Keypad { keys: 0 }
-    }
-
     pub fn clear(&mut self) {
         self.keys = 0;
     }

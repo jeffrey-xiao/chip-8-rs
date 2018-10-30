@@ -7,12 +7,37 @@
 
 A chip-8/schip emulator written in Rust that compiles to WebAssembly.
 
+## Documentation
+
+See the [documentation](https://jeffreyxiao.me/chip-8-rs) for more information about using
+`chip-8-rs`.
+
 ## Usage
 
 Install `chip-8-wasm` from [npm](https://www.npmjs.com/):
 ```
 $ npm install chip-8-wasm
 ```
+
+Example usage: [`chip-8-web`](https://gitlab.com/jeffrey-xiao/chip-8-web).
+
+## Changelog
+
+### [2.0.0] - 2018-10-30
+
+ - Changed to use a single `static mut` global and the `no_std` environment to reduce bundle size.
+ - Bundle size reduced from ~21 kB in `v1.0.0` to ~3kB.
+ - Major API change: Instantiating a `Chip8` object is replaced with functions to mutate the global
+   `Chip8` object.
+
+### [1.0.0] - 2018-10-06
+
+ - Minor clippy fixes.
+ - Initial stable release.
+
+### [0.2.0] - 2018-09-28
+
+ - Initial functional release.
 
 ## References
 
