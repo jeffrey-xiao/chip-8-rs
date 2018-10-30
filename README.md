@@ -24,6 +24,10 @@ Example usage: [`chip-8-web`](https://gitlab.com/jeffrey-xiao/chip-8-web).
 
 ## Changelog
 
+### [1.0.1] - 2018-10-29
+
+ - Minor bundle size optimizations.
+
 ### [1.0.0] - 2018-10-06
 
  - Minor clippy fixes.
