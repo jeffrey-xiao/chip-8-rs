@@ -2,13 +2,13 @@
 
 ## 1.0.1 - 2018-10-29
 
-## Changed
+### Changed
 
  - Minor bundle size optimizations.
 
 ## 1.0.0 - 2018-10-06
 
-## Fixed
+### Fixed
 
  - Minor clippy warning fixes.
 
