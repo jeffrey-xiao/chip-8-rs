@@ -22,6 +22,10 @@ $ npm install chip-8-wasm
 
 Example usage: [`chip-8-web`](https://gitlab.com/jeffrey-xiao/chip-8-web).
 
+## Changelog
+
+See [CHANGELOG](CHANGELOG.md) for more details.
+
 ## References
 
  - [Cowgod's Chip-8 Technical Reference v1.0](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
