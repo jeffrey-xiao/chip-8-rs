@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0 - 2018-11-11
+
+### Changed
+
+ - Change `console_error_panic_hook` as optional dependency.
+
 ## 2.0.0 - 2018-11-11
 
 ### Changed
