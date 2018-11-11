@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate cfg_if;
 #[cfg(target_arch = "wasm32")]
+extern crate console_error_panic_hook;
+#[cfg(target_arch = "wasm32")]
 extern crate js_sys;
 #[cfg(not(target_arch = "wasm32"))]
 extern crate rand;
 #[cfg(target_arch = "wasm32")]
 extern crate wasm_bindgen;
-#[cfg(target_arch = "wasm32")]
-extern crate console_error_panic_hook;
 
 cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
