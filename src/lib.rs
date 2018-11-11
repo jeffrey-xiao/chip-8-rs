@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate cfg_if;
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", console_error_panic_hook))]
 extern crate console_error_panic_hook;
 #[cfg(target_arch = "wasm32")]
 extern crate js_sys;
@@ -24,7 +24,7 @@ cfg_if! {
 mod keypad;
 mod screen;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", console_error_panic_hook))]
 use console_error_panic_hook::set_once;
 use keypad::Keypad;
 #[cfg(not(target_arch = "wasm32"))]
@@ -107,7 +107,7 @@ pub struct Chip8 {
 impl Chip8 {
     /// Constructs a new `Chip8`.
     pub fn new() -> Self {
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(target_arch = "wasm32", console_error_panic_hook))]
         set_once();
 
         Chip8 {
