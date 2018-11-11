@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.0 - 2018-11-11
+
+### Changed
+
+ - Rename package from `chip-8-wasm` to `chipo`.
+ - Clean up dependencies for different platforms.
+
 ## 1.0.1 - 2018-10-29
 
 ### Changed
