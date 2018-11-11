@@ -1,13 +1,36 @@
+#[macro_use]
 extern crate cfg_if;
+#[cfg(target_arch = "wasm32")]
 extern crate js_sys;
+#[cfg(not(target_arch = "wasm32"))]
+extern crate rand;
+#[cfg(target_arch = "wasm32")]
 extern crate wasm_bindgen;
+#[cfg(target_arch = "wasm32")]
+extern crate console_error_panic_hook;
+
+cfg_if! {
+    if #[cfg(target_arch = "wasm32")] {
+        fn generate_u8() -> u8 {
+            (js_sys::Math::random() * 256.0).floor() as u8
+        }
+    } else {
+        fn generate_u8() -> u8 {
+            rand::thread_rng().gen()
+        }
+    }
+}
 
 mod keypad;
 mod screen;
-mod utils;
 
+#[cfg(target_arch = "wasm32")]
+use console_error_panic_hook::set_once;
 use keypad::Keypad;
+#[cfg(not(target_arch = "wasm32"))]
+use rand::Rng;
 use screen::{Screen, ScreenMode};
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
 const MEMORY_SIZE: usize = 4096;
@@ -61,7 +84,7 @@ enum DrawMode {
 }
 
 /// A chip-8 emulator.
-#[wasm_bindgen]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 pub struct Chip8 {
     screen: Screen,
     memory: [u8; MEMORY_SIZE],
@@ -80,11 +103,13 @@ pub struct Chip8 {
     draw_mode: DrawMode,
 }
 
-#[wasm_bindgen]
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 impl Chip8 {
     /// Constructs a new `Chip8`.
     pub fn new() -> Self {
-        utils::set_panic_hook();
+        #[cfg(target_arch = "wasm32")]
+        set_once();
+
         Chip8 {
             screen: Screen::new(),
             memory: [0; MEMORY_SIZE],
@@ -308,8 +333,7 @@ impl Chip8 {
             (0xA, _, _, _) => self.index = nnn,
             (0xB, _, _, _) => self.pc = u16::from(self.registers[0]) + nnn,
             (0xC, _, _, _) => {
-                let rand = (js_sys::Math::random() * 256.0).floor() as u8;
-                self.registers[x] = rand & kk;
+                self.registers[x] = generate_u8() & kk;
             },
             (0xD, _, _, _) => {
                 self.registers[15] = 0;
