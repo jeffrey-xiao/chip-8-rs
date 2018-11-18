@@ -30,6 +30,7 @@ script:
   - cargo +nightly clippy --all-targets
   - cargo +nightly fmt --verbose --all -- --check
   - cargo build --verbose --all
+  - cargo build --verbose --all --target wasm32-unknown-unknown
   - cargo test --verbose --all
 
 after_success:
