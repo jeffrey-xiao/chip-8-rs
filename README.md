@@ -10,14 +10,26 @@
 
 CHIP-8 Oxidized is a CHIP-8/SCHIP emulator written in Rust that can compile to WebAssembly.
 
-## Usage
+## JavaScript Usage
 
 Install `chipo` from [npm](https://www.npmjs.com/):
 ```
 $ npm install chipo
 ```
 
-Example usage: [`chipo-web`](https://gitlab.com/jeffrey-xiao/chipo-web).
+Example JavaScript usage: [`chipo-web`](https://gitlab.com/jeffrey-xiao/chipo-web).
+
+## Rust Usage
+
+Add this to your `Cargo.toml`:
+```toml
+[dependencies]
+chipo = "*"
+```
+and this to your crate root:
+```rust
+extern crate chipo;
+```
 
 ## Changelog
 
