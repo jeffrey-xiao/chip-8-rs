@@ -26,7 +26,7 @@ Add this to your `Cargo.toml`:
 [dependencies]
 chipo = "*"
 ```
-and this to your crate root:
+and this to your crate root if you are using Rust 2015:
 ```rust
 extern crate chipo;
 ```
