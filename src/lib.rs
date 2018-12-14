@@ -42,8 +42,8 @@
 //!
 //! ## License
 //!
-//! `chipo-rs` is distributed under the terms of both the MIT License and the Apache License (Version
-//! 2.0).
+//! `chipo-rs` is distributed under the terms of both the MIT License and the Apache License
+//! (Version 2.0).
 //!
 //! See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) for more details.
 
