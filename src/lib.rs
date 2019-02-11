@@ -13,7 +13,7 @@
 //! ## JavaScript Usage
 //!
 //! Install `chipo` from [npm](https://www.npmjs.com/):
-//! ```no-run
+//! ```no_run
 //! $ npm install chipo
 //! ```
 //!
