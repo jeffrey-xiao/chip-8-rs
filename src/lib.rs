@@ -14,7 +14,7 @@
 //!
 //! Install `chipo` from [npm](https://www.npmjs.com/):
 //!
-//! ```ignore
+//! ```text
 //! $ npm install chipo
 //! ```
 //!

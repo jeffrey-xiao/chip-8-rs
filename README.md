@@ -14,7 +14,7 @@ CHIP-8 Oxidized is a CHIP-8/SCHIP emulator written in Rust that can compile to W
 
 Install `chipo` from [npm](https://www.npmjs.com/):
 
-```
+```text
 $ npm install chipo
 ```
 
