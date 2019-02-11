@@ -13,7 +13,8 @@
 //! ## JavaScript Usage
 //!
 //! Install `chipo` from [npm](https://www.npmjs.com/):
-//! ```no_run
+//!
+//! ```ignore
 //! $ npm install chipo
 //! ```
 //!
@@ -22,11 +23,14 @@
 //! ## Rust Usage
 //!
 //! Add this to your `Cargo.toml`:
+//!
 //! ```toml
 //! [dependencies]
 //! chipo = "*"
 //! ```
+//!
 //! and this to your crate root if you are using Rust 2015:
+//!
 //! ```rust
 //! extern crate chipo;
 //! ```
@@ -37,8 +41,8 @@
 //!
 //! ## References
 //!
-//!  - [Cowgod's Chip-8 Technical Reference v1.0](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
-//!  - [Erik Bryntse's SUPER-CHIP v1.1](http://devernay.free.fr/hacks/chip8/schip.txt)
+//! - [Cowgod's Chip-8 Technical Reference v1.0](http://devernay.free.fr/hacks/chip8/C8TECH10.HTM)
+//! - [Erik Bryntse's SUPER-CHIP v1.1](http://devernay.free.fr/hacks/chip8/schip.txt)
 //!
 //! ## License
 //!
