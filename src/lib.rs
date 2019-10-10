@@ -289,23 +289,23 @@ impl Chip8 {
             (0x0, 0x0, 0xC, _) => {
                 self.screen.scroll_down(n);
                 self.should_draw = true;
-            },
+            }
             (0x0, 0x0, 0xE, 0x0) => {
                 self.screen.clear_screen();
                 self.should_draw = true;
-            },
+            }
             (0x0, 0x0, 0xE, 0xE) => {
                 self.sp -= 1;
                 self.pc = self.stack[self.sp as usize];
-            },
+            }
             (0x0, 0x0, 0xF, 0xB) => {
                 self.screen.scroll_right();
                 self.should_draw = true;
-            },
+            }
             (0x0, 0x0, 0xF, 0xC) => {
                 self.screen.scroll_left();
                 self.should_draw = true;
-            },
+            }
             (0x0, 0x0, 0xF, 0xD) => self.is_running = false,
             (0x0, 0x0, 0xF, 0xE) => self.screen.set_mode(ScreenMode::Standard),
             (0x0, 0x0, 0xF, 0xF) => self.screen.set_mode(ScreenMode::Super),
@@ -314,22 +314,22 @@ impl Chip8 {
                 self.stack[self.sp as usize] = self.pc;
                 self.sp += 1;
                 self.pc = nnn;
-            },
+            }
             (0x3, _, _, _) => {
                 if self.registers[x] == kk {
                     self.pc += 2;
                 }
-            },
+            }
             (0x4, _, _, _) => {
                 if self.registers[x] != kk {
                     self.pc += 2;
                 }
-            },
+            }
             (0x5, _, _, 0x0) => {
                 if self.registers[x] == self.registers[y] {
                     self.pc += 2;
                 }
-            },
+            }
             (0x6, _, _, _) => self.registers[x] = kk,
             (0x7, _, _, _) => self.registers[x] = self.registers[x].wrapping_add(kk),
             (0x8, _, _, 0x0) => self.registers[x] = self.registers[y],
@@ -344,7 +344,7 @@ impl Chip8 {
                 } else {
                     self.registers[15] = 0;
                 }
-            },
+            }
             (0x8, _, _, 0x5) => {
                 let (res, underflow) = self.registers[x].overflowing_sub(self.registers[y]);
                 self.registers[x] = res;
@@ -353,11 +353,11 @@ impl Chip8 {
                 } else {
                     self.registers[15] = 1;
                 }
-            },
+            }
             (0x8, _, _, 0x6) => {
                 self.registers[15] = self.registers[x] & 1;
                 self.registers[x] >>= 1;
-            },
+            }
             (0x8, _, _, 0x7) => {
                 let (res, underflow) = self.registers[y].overflowing_sub(self.registers[x]);
                 self.registers[x] = res;
@@ -366,21 +366,21 @@ impl Chip8 {
                 } else {
                     self.registers[15] = 1;
                 }
-            },
+            }
             (0x8, _, _, 0xE) => {
                 self.registers[15] = self.registers[x] >> 7;
                 self.registers[x] <<= 1;
-            },
+            }
             (0x9, _, _, 0x0) => {
                 if self.registers[x] != self.registers[y] {
                     self.pc += 2;
                 }
-            },
+            }
             (0xA, _, _, _) => self.index = nnn,
             (0xB, _, _, _) => self.pc = u16::from(self.registers[0]) + nnn,
             (0xC, _, _, _) => {
                 self.registers[x] = generate_u8() & kk;
-            },
+            }
             (0xD, _, _, _) => {
                 self.registers[15] = 0;
 
@@ -407,11 +407,11 @@ impl Chip8 {
                                 if row > self.screen.height() || col > self.screen.width() {
                                     continue;
                                 }
-                            },
+                            }
                             DrawMode::Wrap => {
                                 row %= self.screen.height();
                                 col %= self.screen.width();
-                            },
+                            }
                         }
 
                         if self.screen.get_pixel(row, col) {
@@ -422,17 +422,17 @@ impl Chip8 {
                 }
 
                 self.should_draw = true;
-            },
+            }
             (0xE, _, 0x9, 0xE) => {
                 if self.keypad.is_pressed(self.registers[x] as usize) {
                     self.pc += 2;
                 }
-            },
+            }
             (0xE, _, 0xA, 0x1) => {
                 if !self.keypad.is_pressed(self.registers[x] as usize) {
                     self.pc += 2;
                 }
-            },
+            }
             (0xF, _, 0x0, 0x7) => self.registers[x] = self.delay_timer,
             (0xF, _, 0x0, 0xA) => {
                 self.pc -= 2;
@@ -440,7 +440,7 @@ impl Chip8 {
                     self.registers[x] = index as u8;
                     self.pc += 2;
                 }
-            },
+            }
             (0xF, _, 0x1, 0x5) => self.delay_timer = self.registers[x],
             (0xF, _, 0x1, 0x8) => self.sound_timer = self.registers[x],
             (0xF, _, 0x1, 0xE) => self.index += u16::from(self.registers[x]),
@@ -450,23 +450,23 @@ impl Chip8 {
                 self.memory[self.index as usize] = self.registers[x] / 100;
                 self.memory[self.index as usize + 1] = ((self.registers[x]) / 10) % 10;
                 self.memory[self.index as usize + 2] = self.registers[x] % 10;
-            },
+            }
             (0xF, _, 0x5, 0x5) => {
                 for i in 0..=x {
                     self.memory[self.index as usize + i] = self.registers[i];
                 }
-            },
+            }
             (0xF, _, 0x6, 0x5) => {
                 for i in 0..=x {
                     self.registers[i] = self.memory[self.index as usize + i];
                 }
-            },
+            }
             (0xF, _, 0x7, 0x5) => {
                 self.super_mode_rpl_flags[..=x].clone_from_slice(&self.registers[..=x])
-            },
+            }
             (0xF, _, 0x8, 0x5) => {
                 self.registers[..=x].clone_from_slice(&self.super_mode_rpl_flags[..=x])
-            },
+            }
             _ => panic!("Unrecognized opcode: {}", opcode),
         }
     }
